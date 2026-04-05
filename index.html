@@ -204,7 +204,7 @@
 
                     const payload = {
                         contents: [{
-                            parts: [{ text: `Say the following text exactly as written:\n\n${chunk}` }]
+                            parts: [{ text: `Read the following text aloud slowly, in a calm and immersive audiobook narration style. Maintain a consistent tone, pace, and voice throughout. Do not rush, pause naturally at punctuation, and keep the same narrative voice from start to finish:\n\n${chunk}` }]
                         }],
                         generationConfig: {
                             responseModalities: ["AUDIO"],
