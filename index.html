@@ -130,6 +130,7 @@
                     delay *= 2;
                 }
             }
+            throw new Error("Az API limit elérve (429): minden próbálkozás meghiúsult. Várj egy percet, majd próbáld újra.");
         }
 
         function splitTextIntoChunks(text, maxLength = 800) {
