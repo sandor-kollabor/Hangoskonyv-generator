@@ -64,11 +64,22 @@
         <!-- Radio play: format hint + character detection -->
         <div id="radioSection" class="hidden space-y-4">
             <div class="bg-slate-900/70 border border-slate-700 rounded-lg p-4 text-xs text-slate-400 leading-relaxed">
-                <p class="font-semibold text-slate-300 mb-1"><i class="fas fa-info-circle mr-1"></i>Formátum — Név: szöveg (nagy- vagy kisbetű is jó)</p>
-                <pre class="mt-2 text-slate-500">Narrátor: A sötétség lassan leszállt a völgyre...
-Alice: Mit keresel itt?
-Bob: Azt, amit te elveszítettél.
-Narrátor: Alice hátrálni kezdett.</pre>
+                <p class="font-semibold text-slate-300 mb-1"><i class="fas fa-info-circle mr-1"></i>Két formátum támogatott — a rendszer automatikusan felismeri:</p>
+                <div class="mt-2 space-y-3">
+                    <div>
+                        <p class="text-slate-400 font-medium mb-1">① Magyar irodalmi (gondolatjeles):</p>
+                        <pre class="text-slate-500">A szoba sötét volt.
+– Mit tegyek? – kérdezte Dániel.
+– Semmi mást, mint várni. – felelte Mária.
+Dániel bólintott.</pre>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 font-medium mb-1">② Kézi formátum (Név: szöveg):</p>
+                        <pre class="text-slate-500">Narrátor: A szoba sötét volt.
+Dániel: Mit tegyek?
+Mária: Semmi mást, mint várni.</pre>
+                    </div>
+                </div>
             </div>
             <button onclick="detectAndRenderCharacters()"
                 class="bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 text-sm font-medium py-2 px-4 rounded-lg transition-colors">
@@ -188,8 +199,63 @@ Narrátor: Alice hátrálni kezdett.</pre>
         document.getElementById('errorArea').classList.add('hidden');
     }
 
-    // Parse "KARAKTER: szöveg" format
-    function parseScript(text) {
+    // Hungarian speech verbs used to find speaker names in attributions
+    const SPEECH_VERBS = new Set([
+        'mondta','kérdezte','felelte','szólt','suttogta','kiáltotta',
+        'mormolta','válaszolta','folytatta','kezdte','nevetett','sóhajtott',
+        'morogta','dörmögte','bólintott','szólalt','lihegte','nyögte',
+        'hörögte','kuncogott','vigyorgott','mosolygott','fordult',
+        'tette','felkiáltott','ismételte','dünnyögte','gügyögte',
+        'harsogta','súgta','köhécselt','dadogta','hebegte'
+    ]);
+
+    // Extract speaker proper name from attribution like "kérdezte Dániel" or "mondta az öreg Kovács"
+    function extractSpeaker(attribution) {
+        const clean = attribution.replace(/[.,!?;:]/g, ' ');
+        const words = clean.split(/\s+/).filter(w => w.length > 1);
+        const names = words.filter(w =>
+            /^[A-ZÁÉÍÓÖŐÚÜŰ]/.test(w) && !SPEECH_VERBS.has(w.toLowerCase())
+        );
+        return names.length > 0 ? names.join(' ') : null;
+    }
+
+    // Parse Hungarian literary dialogue: "– szöveg – mondta Dániel."
+    function parseHungarianDialogue(text) {
+        const lines = text.split('\n');
+        const segments = [];
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            const isDash = trimmed.startsWith('–') || trimmed.startsWith('-') || trimmed.startsWith('—');
+            if (isDash) {
+                // Remove leading dash and whitespace
+                const content = trimmed.replace(/^[–\-—]\s*/, '');
+                // Split on inner " – " / " - " to separate spoken text from attribution
+                const parts = content.split(/\s+[–\-—]\s+/);
+                const spoken = parts[0].trim();
+                let speaker = 'Ismeretlen';
+                if (parts.length >= 2) {
+                    const found = extractSpeaker(parts.slice(1).join(' '));
+                    if (found) speaker = found;
+                }
+                segments.push({ character: speaker, text: spoken });
+            } else {
+                // Narrator text — merge consecutive narrator lines
+                const last = segments[segments.length - 1];
+                if (last && last.character === 'Narrátor') {
+                    last.text += ' ' + trimmed;
+                } else {
+                    segments.push({ character: 'Narrátor', text: trimmed });
+                }
+            }
+        }
+        return segments;
+    }
+
+    // Parse "Karakter: szöveg" colon format
+    function parseColonFormat(text) {
         const lines = text.split('\n');
         const segments = [];
         let currentChar = null;
@@ -197,35 +263,30 @@ Narrátor: Alice hátrálni kezdett.</pre>
 
         for (const line of lines) {
             const trimmed = line.trim();
-            if (!trimmed) {
-                if (currentText) currentText += ' ';
-                continue;
-            }
-            // Match "Name: text" where Name is 1-30 chars, no comma, not a URL
+            if (!trimmed) { if (currentText) currentText += ' '; continue; }
             const match = trimmed.match(/^([^:,\n]{1,30}):\s+(.*)$/);
             if (match) {
                 const name = match[1].trim();
-                // Exclude if name looks like a sentence (contains multiple words and lowercase run)
-                // A character name is short and has no mid-word lowercase runs longer than 1 char
-                const wordCount = name.split(/\s+/).length;
-                const looksLikeSentence = wordCount > 4;
-                if (!looksLikeSentence) {
-                    if (currentChar !== null && currentText.trim()) {
+                if (name.split(/\s+/).length <= 4) {
+                    if (currentChar !== null && currentText.trim())
                         segments.push({ character: currentChar, text: currentText.trim() });
-                    }
                     currentChar = name;
                     currentText = match[2] + ' ';
                     continue;
                 }
             }
-            if (currentChar !== null) {
-                currentText += trimmed + ' ';
-            }
+            if (currentChar !== null) currentText += trimmed + ' ';
         }
-        if (currentChar !== null && currentText.trim()) {
+        if (currentChar !== null && currentText.trim())
             segments.push({ character: currentChar, text: currentText.trim() });
-        }
         return segments;
+    }
+
+    // Auto-detect format and parse
+    function parseScript(text) {
+        const hasDash = /^[\s]*[–\-—]/m.test(text);
+        if (hasDash) return parseHungarianDialogue(text);
+        return parseColonFormat(text);
     }
 
     function splitTextIntoChunks(text, maxLength = 800) {
