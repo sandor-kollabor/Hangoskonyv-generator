@@ -64,11 +64,11 @@
         <!-- Radio play: format hint + character detection -->
         <div id="radioSection" class="hidden space-y-4">
             <div class="bg-slate-900/70 border border-slate-700 rounded-lg p-4 text-xs text-slate-400 leading-relaxed">
-                <p class="font-semibold text-slate-300 mb-1"><i class="fas fa-info-circle mr-1"></i>Formátum — NAGYBETŰS_NÉV: szöveg</p>
-                <pre class="mt-2 text-slate-500">NARRÁTOR: A sötétség lassan leszállt a völgyre...
-ALICE: Mit keresel itt?
-BOB: Azt, amit te elveszítettél.
-NARRÁTOR: Alice hátrálni kezdett.</pre>
+                <p class="font-semibold text-slate-300 mb-1"><i class="fas fa-info-circle mr-1"></i>Formátum — Név: szöveg (nagy- vagy kisbetű is jó)</p>
+                <pre class="mt-2 text-slate-500">Narrátor: A sötétség lassan leszállt a völgyre...
+Alice: Mit keresel itt?
+Bob: Azt, amit te elveszítettél.
+Narrátor: Alice hátrálni kezdett.</pre>
             </div>
             <button onclick="detectAndRenderCharacters()"
                 class="bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 text-sm font-medium py-2 px-4 rounded-lg transition-colors">
@@ -201,11 +201,15 @@ NARRÁTOR: Alice hátrálni kezdett.</pre>
                 if (currentText) currentText += ' ';
                 continue;
             }
-            const match = trimmed.match(/^([A-ZÁÉÍÓÖŐÚÜŰ0-9][A-ZÁÉÍÓÖŐÚÜŰ0-9 .'\-]{0,28}):\s*(.*)$/);
+            // Match "Name: text" where Name is 1-30 chars, no comma, not a URL
+            const match = trimmed.match(/^([^:,\n]{1,30}):\s+(.*)$/);
             if (match) {
                 const name = match[1].trim();
-                const lettersOnly = name.replace(/[^a-zA-ZáéíóöőúüűÁÉÍÓÖŐÚÜŰ]/g, '');
-                if (lettersOnly.length > 0 && lettersOnly === lettersOnly.toUpperCase()) {
+                // Exclude if name looks like a sentence (contains multiple words and lowercase run)
+                // A character name is short and has no mid-word lowercase runs longer than 1 char
+                const wordCount = name.split(/\s+/).length;
+                const looksLikeSentence = wordCount > 4;
+                if (!looksLikeSentence) {
                     if (currentChar !== null && currentText.trim()) {
                         segments.push({ character: currentChar, text: currentText.trim() });
                     }
@@ -373,7 +377,7 @@ NARRÁTOR: Alice hátrálni kezdett.</pre>
                     const voice = characterVoices[seg.character];
                     setLoadingText(`${seg.character} (${i+1}/${segments.length})...`);
 
-                    const isNarrator = seg.character === 'NARRÁTOR' || seg.character === 'NARRATOR';
+                    const isNarrator = /^narr[aá]tor$/i.test(seg.character.trim());
                     const result = await generateAudioForText(seg.text, voice, apiKey, isNarrator);
 
                     const merged = new Uint8Array(finalPcm.length + result.pcm.length);
