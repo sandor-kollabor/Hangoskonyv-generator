@@ -202,11 +202,8 @@
                     }
 
                     const payload = {
-                        systemInstruction: {
-                            parts: [{ text: "Read the following text aloud exactly as written. Do not add any commentary or explanation, only produce speech audio of the given text." }]
-                        },
                         contents: [{
-                            parts: [{ text: chunk }]
+                            parts: [{ text: `Say the following text exactly as written:\n\n${chunk}` }]
                         }],
                         generationConfig: {
                             responseModalities: ["AUDIO"],
