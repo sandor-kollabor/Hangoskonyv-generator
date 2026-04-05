@@ -19,6 +19,8 @@
         textarea::-webkit-scrollbar-track { background: #1e293b; }
         textarea::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         textarea::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .speed-btn { transition: all 0.15s; }
+        .speed-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -26,7 +28,7 @@
 <div class="max-w-3xl w-full bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 overflow-hidden">
     <div class="p-6 border-b border-slate-700 bg-slate-800/50">
         <h1 class="text-2xl font-bold text-blue-400"><i class="fas fa-headphones-alt mr-2"></i>OS 2.0 Hangoskönyv Készítő</h1>
-        <p class="text-slate-400 text-sm mt-1">Generálj letölthető .wav hangfájlt szövegből — hangoskönyv vagy rádiójáték módban.</p>
+        <p class="text-slate-400 text-sm mt-1">Illeszd be a szöveget, és generálj letölthető .wav hangfájlt.</p>
     </div>
 
     <div class="p-6 space-y-6">
@@ -36,58 +38,31 @@
             <label class="block text-sm font-medium text-slate-300 mb-2">Gemini API Kulcs</label>
             <input type="password" id="apiKeyInput" placeholder="Illeszd be a Gemini API kulcsodat..."
                 class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-            <p class="text-xs text-slate-500 mt-1">A kulcs csak a böngésződben marad, nem kerül elküldésre.</p>
         </div>
 
-        <!-- Mode Toggle -->
-        <div>
-            <label class="block text-sm font-medium text-slate-300 mb-2">Mód</label>
-            <div class="flex rounded-lg overflow-hidden border border-slate-600 w-fit">
-                <button id="btnModeAudiobook" onclick="setMode('audiobook')"
-                    class="px-5 py-2 text-sm font-medium bg-blue-600 text-white transition-colors">
-                    <i class="fas fa-book-open mr-2"></i>Hangoskönyv
-                </button>
-                <button id="btnModeRadio" onclick="setMode('radio')"
-                    class="px-5 py-2 text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition-colors">
-                    <i class="fas fa-microphone-alt mr-2"></i>Rádiójáték
-                </button>
+        <!-- Voice + Speed -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Hangszín</label>
+                <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    <option value="Aoede">Aoede – Női, mesélő</option>
+                    <option value="Kore">Kore – Női, nyugodt</option>
+                    <option value="Leda">Leda – Női, lágy</option>
+                    <option value="Charon">Charon – Férfi, mély</option>
+                    <option value="Fenrir">Fenrir – Férfi, sötét</option>
+                    <option value="Zephyr">Zephyr – Férfi, dinamikus</option>
+                    <option value="Puck">Puck – Férfi, játékos</option>
+                    <option value="Orus">Orus – Férfi, erőteljes</option>
+                </select>
             </div>
-        </div>
-
-        <!-- Audiobook: single voice -->
-        <div id="audiobookVoiceSection">
-            <label class="block text-sm font-medium text-slate-300 mb-2">Hangszín (narrátor)</label>
-            <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-            </select>
-        </div>
-
-        <!-- Radio play: format hint + character detection -->
-        <div id="radioSection" class="hidden space-y-4">
-            <div class="bg-slate-900/70 border border-slate-700 rounded-lg p-4 text-xs text-slate-400 leading-relaxed">
-                <p class="font-semibold text-slate-300 mb-1"><i class="fas fa-info-circle mr-1"></i>Két formátum támogatott — a rendszer automatikusan felismeri:</p>
-                <div class="mt-2 space-y-3">
-                    <div>
-                        <p class="text-slate-400 font-medium mb-1">① Magyar irodalmi (gondolatjeles):</p>
-                        <pre class="text-slate-500">A szoba sötét volt.
-– Mit tegyek? – kérdezte Dániel.
-– Semmi mást, mint várni. – felelte Mária.
-Dániel bólintott.</pre>
-                    </div>
-                    <div>
-                        <p class="text-slate-400 font-medium mb-1">② Kézi formátum (Név: szöveg):</p>
-                        <pre class="text-slate-500">Narrátor: A szoba sötét volt.
-Dániel: Mit tegyek?
-Mária: Semmi mást, mint várni.</pre>
-                    </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Lejátszási sebesség</label>
+                <div class="flex gap-2">
+                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm" data-speed="0.9" onclick="setSpeed(0.9)">0.9×</button>
+                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm" data-speed="1.0" onclick="setSpeed(1.0)">1×</button>
+                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm active" data-speed="1.25" onclick="setSpeed(1.25)">1.25×</button>
+                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm" data-speed="1.5" onclick="setSpeed(1.5)">1.5×</button>
                 </div>
-            </div>
-            <button onclick="detectAndRenderCharacters()"
-                class="bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 text-sm font-medium py-2 px-4 rounded-lg transition-colors">
-                <i class="fas fa-user-friends mr-2"></i>Karakterek felismerése
-            </button>
-            <div id="characterVoicesContainer" class="hidden space-y-3">
-                <p class="text-sm font-medium text-slate-300">Hang hozzárendelése karakterenként:</p>
-                <div id="characterVoicesList" class="space-y-2"></div>
             </div>
         </div>
 
@@ -95,14 +70,13 @@ Mária: Semmi mást, mint várni.</pre>
         <div>
             <div class="flex justify-between items-end mb-2">
                 <label class="block text-sm font-medium text-slate-300">A felolvasandó szöveg</label>
-                <span id="chunkHint" class="text-xs text-slate-500">Hosszú szöveget a rendszer automatikusan darabol.</span>
+                <span class="text-xs text-slate-500">Hosszú szöveget a rendszer automatikusan darabol.</span>
             </div>
-            <textarea id="textInput" rows="10"
-                placeholder="Illeszd be ide a szöveget..."
+            <textarea id="textInput" rows="10" placeholder="Illeszd be ide a könyv egy részletét..."
                 class="w-full bg-slate-900 border border-slate-600 rounded-lg p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-y"></textarea>
         </div>
 
-        <!-- Controls -->
+        <!-- Generate -->
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
             <button id="generateBtn" onclick="processTextToSpeech()"
                 class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:shadow-blue-500/30 transition-all flex items-center justify-center">
@@ -114,17 +88,17 @@ Mária: Semmi mást, mint várni.</pre>
         </div>
 
         <!-- Result -->
-        <div id="resultArea" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5 mt-4">
+        <div id="resultArea" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5">
             <h3 class="text-sm font-semibold text-slate-300 mb-3">Eredmény:</h3>
             <audio id="audioPlayer" controls class="w-full mb-4 outline-none"></audio>
-            <a id="downloadBtn" href="#" download="audio.wav"
+            <a id="downloadBtn" href="#" download="hangoskonyv.wav"
                 class="inline-flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 font-medium py-2.5 px-4 rounded-lg transition-colors">
                 <i class="fas fa-download mr-2"></i> Hangfájl Letöltése (.wav)
             </a>
         </div>
 
         <!-- Error -->
-        <div id="errorArea" class="hidden bg-red-900/30 border border-red-800 text-red-300 rounded-xl p-4 mt-4 text-sm">
+        <div id="errorArea" class="hidden bg-red-900/30 border border-red-800 text-red-300 rounded-xl p-4 text-sm">
             <i class="fas fa-exclamation-triangle mr-2"></i> <span id="errorMsg">Hiba történt.</span>
         </div>
 
@@ -132,161 +106,15 @@ Mária: Semmi mást, mint várni.</pre>
 </div>
 
 <script>
-    const VOICES = [
-        { value: "Aoede",       label: "Aoede – Női, mesélő, tiszta" },
-        { value: "Kore",        label: "Kore – Női, nyugodt, professzionális" },
-        { value: "Leda",        label: "Leda – Női, lágy" },
-        { value: "Callirrhoe",  label: "Callirrhoe – Női, könnyed" },
-        { value: "Despina",     label: "Despina – Női, kifejező" },
-        { value: "Charon",      label: "Charon – Férfi, mély, higgadt" },
-        { value: "Fenrir",      label: "Fenrir – Férfi, sötét, narratív" },
-        { value: "Zephyr",      label: "Zephyr – Férfi, dinamikus" },
-        { value: "Puck",        label: "Puck – Férfi, játékos" },
-        { value: "Orus",        label: "Orus – Férfi, erőteljes" },
-        { value: "Achernar",    label: "Achernar – Semleges, tiszta" },
-    ];
+    let currentSpeed = 1.25;
 
-    let currentMode = 'audiobook';
-    let characterVoices = {}; // { "NARRÁTOR": "Aoede", "ALICE": "Charon", ... }
-
-    // --- Init ---
-    (function init() {
-        const sel = document.getElementById('voiceSelect');
-        VOICES.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.value;
-            opt.textContent = v.label;
-            sel.appendChild(opt);
+    function setSpeed(speed) {
+        currentSpeed = speed;
+        document.querySelectorAll('.speed-btn').forEach(btn => {
+            btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
         });
-    })();
-
-    function setMode(mode) {
-        currentMode = mode;
-        const isRadio = mode === 'radio';
-        document.getElementById('audiobookVoiceSection').classList.toggle('hidden', isRadio);
-        document.getElementById('radioSection').classList.toggle('hidden', !isRadio);
-        document.getElementById('btnModeAudiobook').className = `px-5 py-2 text-sm font-medium transition-colors ${!isRadio ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`;
-        document.getElementById('btnModeRadio').className = `px-5 py-2 text-sm font-medium transition-colors ${isRadio ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`;
-        document.getElementById('chunkHint').textContent = isRadio
-            ? 'Formátum: NAGYBETŰS_NÉV: szöveg — soronként.'
-            : 'Hosszú szöveget a rendszer automatikusan darabol.';
-    }
-
-    function detectAndRenderCharacters() {
-        const text = document.getElementById('textInput').value;
-        const segments = parseScript(text);
-        if (segments.length === 0) {
-            showError("Nem találtam karaktereket. Ellenőrizd a formátumot: NAGYBETŰS_NÉV: szöveg");
-            return;
-        }
-        const chars = [...new Set(segments.map(s => s.character))];
-        characterVoices = {};
-        const list = document.getElementById('characterVoicesList');
-        list.innerHTML = '';
-        chars.forEach((char, i) => {
-            characterVoices[char] = VOICES[i % VOICES.length].value;
-            const row = document.createElement('div');
-            row.className = 'flex items-center gap-3';
-            row.innerHTML = `
-                <span class="text-slate-300 text-sm font-mono font-semibold w-32 truncate">${char}</span>
-                <select data-char="${char}" onchange="characterVoices[this.dataset.char]=this.value"
-                    class="flex-1 bg-slate-900 border border-slate-600 rounded-lg p-2 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    ${VOICES.map(v => `<option value="${v.value}" ${characterVoices[char]===v.value?'selected':''}>${v.label}</option>`).join('')}
-                </select>`;
-            list.appendChild(row);
-        });
-        document.getElementById('characterVoicesContainer').classList.remove('hidden');
-        document.getElementById('errorArea').classList.add('hidden');
-    }
-
-    // Hungarian speech verbs used to find speaker names in attributions
-    const SPEECH_VERBS = new Set([
-        'mondta','kérdezte','felelte','szólt','suttogta','kiáltotta',
-        'mormolta','válaszolta','folytatta','kezdte','nevetett','sóhajtott',
-        'morogta','dörmögte','bólintott','szólalt','lihegte','nyögte',
-        'hörögte','kuncogott','vigyorgott','mosolygott','fordult',
-        'tette','felkiáltott','ismételte','dünnyögte','gügyögte',
-        'harsogta','súgta','köhécselt','dadogta','hebegte'
-    ]);
-
-    // Extract speaker proper name from attribution like "kérdezte Dániel" or "mondta az öreg Kovács"
-    function extractSpeaker(attribution) {
-        const clean = attribution.replace(/[.,!?;:]/g, ' ');
-        const words = clean.split(/\s+/).filter(w => w.length > 1);
-        const names = words.filter(w =>
-            /^[A-ZÁÉÍÓÖŐÚÜŰ]/.test(w) && !SPEECH_VERBS.has(w.toLowerCase())
-        );
-        return names.length > 0 ? names.join(' ') : null;
-    }
-
-    // Parse Hungarian literary dialogue: "– szöveg – mondta Dániel."
-    function parseHungarianDialogue(text) {
-        const lines = text.split('\n');
-        const segments = [];
-
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) continue;
-
-            const isDash = trimmed.startsWith('–') || trimmed.startsWith('-') || trimmed.startsWith('—');
-            if (isDash) {
-                // Remove leading dash and whitespace
-                const content = trimmed.replace(/^[–\-—]\s*/, '');
-                // Split on inner " – " / " - " to separate spoken text from attribution
-                const parts = content.split(/\s+[–\-—]\s+/);
-                const spoken = parts[0].trim();
-                let speaker = 'Ismeretlen';
-                if (parts.length >= 2) {
-                    const found = extractSpeaker(parts.slice(1).join(' '));
-                    if (found) speaker = found;
-                }
-                segments.push({ character: speaker, text: spoken });
-            } else {
-                // Narrator text — merge consecutive narrator lines
-                const last = segments[segments.length - 1];
-                if (last && last.character === 'Narrátor') {
-                    last.text += ' ' + trimmed;
-                } else {
-                    segments.push({ character: 'Narrátor', text: trimmed });
-                }
-            }
-        }
-        return segments;
-    }
-
-    // Parse "Karakter: szöveg" colon format
-    function parseColonFormat(text) {
-        const lines = text.split('\n');
-        const segments = [];
-        let currentChar = null;
-        let currentText = '';
-
-        for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed) { if (currentText) currentText += ' '; continue; }
-            const match = trimmed.match(/^([^:,\n]{1,30}):\s+(.*)$/);
-            if (match) {
-                const name = match[1].trim();
-                if (name.split(/\s+/).length <= 4) {
-                    if (currentChar !== null && currentText.trim())
-                        segments.push({ character: currentChar, text: currentText.trim() });
-                    currentChar = name;
-                    currentText = match[2] + ' ';
-                    continue;
-                }
-            }
-            if (currentChar !== null) currentText += trimmed + ' ';
-        }
-        if (currentChar !== null && currentText.trim())
-            segments.push({ character: currentChar, text: currentText.trim() });
-        return segments;
-    }
-
-    // Auto-detect format and parse
-    function parseScript(text) {
-        const hasDash = /^[\s]*[–\-—]/m.test(text);
-        if (hasDash) return parseHungarianDialogue(text);
-        return parseColonFormat(text);
+        const player = document.getElementById('audioPlayer');
+        if (player.src) player.playbackRate = speed;
     }
 
     function splitTextIntoChunks(text, maxLength = 800) {
@@ -339,68 +167,13 @@ Mária: Semmi mást, mint várni.</pre>
                 delay *= 2;
             }
         }
-        throw new Error("API limit elérve (429): minden próbálkozás meghiúsult. Várj egy percet.");
-    }
-
-    // Returns { pcm: Uint8Array, sampleRate: number }
-    async function generateAudioForText(text, voice, apiKey, isNarrator = true) {
-        const chunks = splitTextIntoChunks(text, 800);
-        let combined = new Uint8Array(0);
-        let sampleRate = 24000;
-
-        for (const chunk of chunks) {
-            const prompt = isNarrator
-                ? `Narrate the following text slowly and calmly. No breathing sounds. Consistent voice throughout:\n\n${chunk}`
-                : `Speak this dialogue naturally. No breathing sounds:\n\n${chunk}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } }
-                    }
-                }
-            };
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-            const response = await fetchWithRetry(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await response.json();
-            if (data.error) throw new Error(`API Hiba: ${data.error.message}`);
-
-            const candidate = data.candidates?.[0];
-            if (!candidate) throw new Error("A válasz nem tartalmazott 'candidates' tömböt.");
-            if (candidate.finishReason === "SAFETY") throw new Error("A generálást a biztonsági szűrő blokkolta.");
-
-            let inlineData = null;
-            for (const part of (candidate.content?.parts || [])) {
-                if (part.inlineData?.mimeType?.startsWith('audio')) { inlineData = part.inlineData; break; }
-            }
-            if (!inlineData?.data) {
-                const textFallback = (candidate.content?.parts || []).map(p => p.text).filter(Boolean).join(' ');
-                if (textFallback) throw new Error("Az API hang helyett szöveget adott vissza: " + textFallback.substring(0, 80));
-                throw new Error(`Nem érkezett hangadat. Ok: ${candidate.finishReason}`);
-            }
-
-            const rateMatch = inlineData.mimeType.match(/rate=(\d+)/);
-            if (rateMatch) sampleRate = parseInt(rateMatch[1]);
-
-            const pcm = new Uint8Array(base64ToArrayBuffer(inlineData.data));
-            const merged = new Uint8Array(combined.length + pcm.length);
-            merged.set(combined); merged.set(pcm, combined.length);
-            combined = merged;
-        }
-        return { pcm: combined, sampleRate };
+        throw new Error("API limit elérve: minden próbálkozás meghiúsult. Várj egy percet.");
     }
 
     async function processTextToSpeech() {
         const apiKey = document.getElementById('apiKeyInput').value.trim();
-        const text = document.getElementById('textInput').value.trim();
+        const text   = document.getElementById('textInput').value.trim();
+        const voice  = document.getElementById('voiceSelect').value;
 
         if (!apiKey) { showError("Kérlek, add meg a Gemini API kulcsodat!"); return; }
         if (!text)   { showError("Kérlek, illessz be szöveget!"); return; }
@@ -412,50 +185,70 @@ Mária: Semmi mást, mint várni.</pre>
         document.getElementById('errorArea').classList.add('hidden');
 
         try {
-            let finalPcm = new Uint8Array(0);
+            const chunks = splitTextIntoChunks(text, 800);
+            let combined = new Uint8Array(0);
             let sampleRate = 24000;
 
-            if (currentMode === 'audiobook') {
-                const voice = document.getElementById('voiceSelect').value;
-                setLoadingText("Hangszintézis folyamatban...");
-                const result = await generateAudioForText(text, voice, apiKey, true);
-                finalPcm = result.pcm;
-                sampleRate = result.sampleRate;
+            for (let i = 0; i < chunks.length; i++) {
+                document.getElementById('loadingText').textContent = chunks.length > 1
+                    ? `Hangszintézis (${i + 1}/${chunks.length})...`
+                    : 'Hangszintézis folyamatban...';
 
-            } else {
-                // Radio play mode
-                const segments = parseScript(text);
-                if (segments.length === 0) { showError("Nem találtam karaktereket. Ellenőrizd a formátumot."); return; }
+                const payload = {
+                    contents: [{ parts: [{ text: `Narrate the following text. No breathing sounds. Consistent voice:\n\n${chunks[i]}` }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
+                    }
+                };
 
-                const chars = [...new Set(segments.map(s => s.character))];
-                const missing = chars.filter(c => !characterVoices[c]);
-                if (missing.length > 0) {
-                    showError(`Futtasd le a "Karakterek felismerése" gombot, mielőtt generálsz!`); return;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                const response = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(`API Hiba: ${data.error.message}`);
+
+                const candidate = data.candidates?.[0];
+                if (!candidate) throw new Error("A válasz nem tartalmazott 'candidates' tömböt.");
+                if (candidate.finishReason === "SAFETY") throw new Error("A generálást a biztonsági szűrő blokkolta.");
+
+                let inlineData = null;
+                for (const part of (candidate.content?.parts || [])) {
+                    if (part.inlineData?.mimeType?.startsWith('audio')) { inlineData = part.inlineData; break; }
+                }
+                if (!inlineData?.data) {
+                    const textFallback = (candidate.content?.parts || []).map(p => p.text).filter(Boolean).join(' ');
+                    if (textFallback) throw new Error("Az API hang helyett szöveget adott vissza: " + textFallback.substring(0, 80));
+                    throw new Error(`Nem érkezett hangadat. Ok: ${candidate.finishReason}`);
                 }
 
-                for (let i = 0; i < segments.length; i++) {
-                    const seg = segments[i];
-                    const voice = characterVoices[seg.character];
-                    setLoadingText(`${seg.character} (${i+1}/${segments.length})...`);
+                const rateMatch = inlineData.mimeType.match(/rate=(\d+)/);
+                if (rateMatch) sampleRate = parseInt(rateMatch[1]);
 
-                    const isNarrator = /^narr[aá]tor$/i.test(seg.character.trim());
-                    const result = await generateAudioForText(seg.text, voice, apiKey, isNarrator);
-
-                    const merged = new Uint8Array(finalPcm.length + result.pcm.length);
-                    merged.set(finalPcm); merged.set(result.pcm, finalPcm.length);
-                    finalPcm = merged;
-                    sampleRate = result.sampleRate;
-                }
+                const pcm = new Uint8Array(base64ToArrayBuffer(inlineData.data));
+                const merged = new Uint8Array(combined.length + pcm.length);
+                merged.set(combined); merged.set(pcm, combined.length);
+                combined = merged;
             }
 
-            if (finalPcm.length === 0) throw new Error("Nem sikerült hangot generálni.");
+            if (combined.length === 0) throw new Error("Nem sikerült hangot generálni.");
 
-            const wavBlob = createWavBlob(finalPcm.buffer, sampleRate);
+            const wavBlob = createWavBlob(combined.buffer, sampleRate);
             const audioUrl = URL.createObjectURL(wavBlob);
-            document.getElementById('audioPlayer').src = audioUrl;
+
+            const player = document.getElementById('audioPlayer');
+            player.src = audioUrl;
+            player.playbackRate = currentSpeed;
+            player.onloadedmetadata = () => { player.playbackRate = currentSpeed; };
+
             const dl = document.getElementById('downloadBtn');
             dl.href = audioUrl;
-            dl.download = currentMode === 'radio' ? 'radiojáték.wav' : 'hangoskonyv.wav';
+            dl.download = `hangoskonyv_${voice}.wav`;
+
             document.getElementById('resultArea').classList.remove('hidden');
 
         } catch (err) {
@@ -465,10 +258,6 @@ Mária: Semmi mást, mint várni.</pre>
             btn.disabled = false; btn.classList.remove('opacity-50');
             document.getElementById('loadingStatus').classList.add('hidden');
         }
-    }
-
-    function setLoadingText(msg) {
-        document.getElementById('loadingText').textContent = msg;
     }
 
     function showError(msg) {
