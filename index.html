@@ -19,8 +19,7 @@
         textarea::-webkit-scrollbar-track { background: #1e293b; }
         textarea::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         textarea::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        .speed-btn { transition: all 0.15s; }
-        .speed-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
+
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -41,9 +40,9 @@
         </div>
 
         <!-- Voice + Speed -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Hangszín</label>
             <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Hangszín</label>
                 <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                     <option value="Aoede">Aoede – Női, mesélő</option>
                     <option value="Kore">Kore – Női, nyugodt</option>
@@ -54,15 +53,6 @@
                     <option value="Puck">Puck – Férfi, játékos</option>
                     <option value="Orus">Orus – Férfi, erőteljes</option>
                 </select>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Lejátszási sebesség</label>
-                <div class="flex gap-2">
-                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm" data-speed="0.9" onclick="setSpeed(0.9)">0.9×</button>
-                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm" data-speed="1.0" onclick="setSpeed(1.0)">1×</button>
-                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm active" data-speed="1.25" onclick="setSpeed(1.25)">1.25×</button>
-                    <button class="speed-btn flex-1 py-2 rounded-lg border border-slate-600 bg-slate-900 text-slate-300 text-sm" data-speed="1.5" onclick="setSpeed(1.5)">1.5×</button>
-                </div>
             </div>
         </div>
 
@@ -106,17 +96,6 @@
 </div>
 
 <script>
-    let currentSpeed = 1.25;
-
-    function setSpeed(speed) {
-        currentSpeed = speed;
-        document.querySelectorAll('.speed-btn').forEach(btn => {
-            btn.classList.toggle('active', parseFloat(btn.dataset.speed) === speed);
-        });
-        const player = document.getElementById('audioPlayer');
-        if (player.src) player.playbackRate = speed;
-    }
-
     function splitTextIntoChunks(text, maxLength = 800) {
         const chunks = [];
         const parts = text.split(/(?<=[.!?\n])\s+/);
@@ -242,8 +221,8 @@
 
             const player = document.getElementById('audioPlayer');
             player.src = audioUrl;
-            player.playbackRate = currentSpeed;
-            player.onloadedmetadata = () => { player.playbackRate = currentSpeed; };
+            player.playbackRate = 1.25;
+            player.onloadedmetadata = () => { player.playbackRate = 1.25; };
 
             const dl = document.getElementById('downloadBtn');
             dl.href = audioUrl;
