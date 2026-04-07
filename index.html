@@ -221,8 +221,8 @@
 
             const player = document.getElementById('audioPlayer');
             player.src = audioUrl;
-            player.playbackRate = 1.25;
-            player.onloadedmetadata = () => { player.playbackRate = 1.25; };
+            player.playbackRate = 1.0;
+            player.onloadedmetadata = () => { player.playbackRate = 1.0; };
 
             const dl = document.getElementById('downloadBtn');
             dl.href = audioUrl;
