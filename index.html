@@ -6,6 +6,7 @@
     <title>OS 2.0 Hangoskönyv Készítő</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body { background-color: #0f172a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
         .loader {
@@ -19,7 +20,7 @@
         textarea::-webkit-scrollbar-track { background: #1e293b; }
         textarea::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         textarea::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
+        .mode-btn.active { background-color: #3b82f6; color: white; border-color: #3b82f6; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
@@ -27,7 +28,7 @@
 <div class="max-w-3xl w-full bg-slate-800 shadow-2xl rounded-2xl border border-slate-700 overflow-hidden">
     <div class="p-6 border-b border-slate-700 bg-slate-800/50">
         <h1 class="text-2xl font-bold text-blue-400"><i class="fas fa-headphones-alt mr-2"></i>OS 2.0 Hangoskönyv Készítő</h1>
-        <p class="text-slate-400 text-sm mt-1">Illeszd be a szöveget, és generálj letölthető .wav hangfájlt.</p>
+        <p class="text-slate-400 text-sm mt-1">Illeszd be a szöveget, vagy tölts fel több .txt fájlt, és generálj letölthető .wav hangfájlt.</p>
     </div>
 
     <div class="p-6 space-y-6">
@@ -39,31 +40,49 @@
                 class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
         </div>
 
-        <!-- Voice + Speed -->
+        <!-- Voice -->
         <div>
             <label class="block text-sm font-medium text-slate-300 mb-2">Hangszín</label>
-            <div>
-                <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                    <option value="Aoede">Aoede – Női, mesélő</option>
-                    <option value="Kore">Kore – Női, nyugodt</option>
-                    <option value="Leda">Leda – Női, lágy</option>
-                    <option value="Charon">Charon – Férfi, mély</option>
-                    <option value="Fenrir">Fenrir – Férfi, sötét</option>
-                    <option value="Zephyr">Zephyr – Férfi, dinamikus</option>
-                    <option value="Puck">Puck – Férfi, játékos</option>
-                    <option value="Orus">Orus – Férfi, erőteljes</option>
-                </select>
+            <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <option value="Aoede">Aoede – Női, mesélő</option>
+                <option value="Kore">Kore – Női, nyugodt</option>
+                <option value="Leda">Leda – Női, lágy</option>
+                <option value="Charon">Charon – Férfi, mély</option>
+                <option value="Fenrir">Fenrir – Férfi, sötét</option>
+                <option value="Zephyr">Zephyr – Férfi, dinamikus</option>
+                <option value="Puck">Puck – Férfi, játékos</option>
+                <option value="Orus">Orus – Férfi, erőteljes</option>
+            </select>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div>
+            <div class="flex rounded-lg overflow-hidden border border-slate-600 w-fit">
+                <button id="btnModeText" class="mode-btn active px-5 py-2 text-sm font-medium bg-slate-900 text-slate-300 transition-colors" onclick="setInputMode('text')">
+                    <i class="fas fa-keyboard mr-2"></i>Szöveg beillesztése
+                </button>
+                <button id="btnModeBatch" class="mode-btn px-5 py-2 text-sm font-medium bg-slate-900 text-slate-300 transition-colors" onclick="setInputMode('batch')">
+                    <i class="fas fa-layer-group mr-2"></i>Kötegelt (.txt fájlok)
+                </button>
             </div>
         </div>
 
-        <!-- Text Input -->
-        <div>
+        <!-- Text Input Mode -->
+        <div id="textModeSection">
             <div class="flex justify-between items-end mb-2">
                 <label class="block text-sm font-medium text-slate-300">A felolvasandó szöveg</label>
                 <span class="text-xs text-slate-500">Hosszú szöveget a rendszer automatikusan darabol.</span>
             </div>
             <textarea id="textInput" rows="10" placeholder="Illeszd be ide a könyv egy részletét..."
                 class="w-full bg-slate-900 border border-slate-600 rounded-lg p-4 text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors resize-y"></textarea>
+        </div>
+
+        <!-- Batch Mode -->
+        <div id="batchModeSection" class="hidden">
+            <label class="block text-sm font-medium text-slate-300 mb-2">Válassz .txt fájlokat (a sorrend számít)</label>
+            <input type="file" id="batchFileInput" accept=".txt" multiple
+                class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer file:hover:bg-blue-500 cursor-pointer">
+            <div id="batchFileList" class="mt-3 space-y-1 text-sm text-slate-400"></div>
         </div>
 
         <!-- Generate -->
@@ -77,7 +96,7 @@
             </div>
         </div>
 
-        <!-- Result -->
+        <!-- Single Result -->
         <div id="resultArea" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5">
             <h3 class="text-sm font-semibold text-slate-300 mb-3">Eredmény:</h3>
             <audio id="audioPlayer" controls class="w-full mb-4 outline-none"></audio>
@@ -85,6 +104,17 @@
                 class="inline-flex items-center justify-center w-full bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 font-medium py-2.5 px-4 rounded-lg transition-colors">
                 <i class="fas fa-download mr-2"></i> Hangfájl Letöltése (.wav)
             </a>
+        </div>
+
+        <!-- Batch Results -->
+        <div id="batchResultArea" class="hidden bg-slate-900 border border-slate-700 rounded-xl p-5 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-semibold text-slate-300">Eredmények:</h3>
+                <button onclick="downloadAllAsZip()" class="text-sm bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 font-medium py-1.5 px-3 rounded-lg transition-colors">
+                    <i class="fas fa-file-archive mr-1"></i> Összes letöltése (ZIP)
+                </button>
+            </div>
+            <div id="batchResultList" class="space-y-3"></div>
         </div>
 
         <!-- Error -->
@@ -96,7 +126,32 @@
 </div>
 
 <script>
-    function splitTextIntoChunks(text, maxLength = 800) {
+    let inputMode = 'text';
+    let batchFiles = [];
+    let batchResults = []; // { name, blob }
+
+    function setInputMode(mode) {
+        inputMode = mode;
+        document.getElementById('btnModeText').classList.toggle('active', mode === 'text');
+        document.getElementById('btnModeBatch').classList.toggle('active', mode === 'batch');
+        document.getElementById('textModeSection').classList.toggle('hidden', mode !== 'text');
+        document.getElementById('batchModeSection').classList.toggle('hidden', mode !== 'batch');
+        document.getElementById('resultArea').classList.add('hidden');
+        document.getElementById('batchResultArea').classList.add('hidden');
+    }
+
+    document.getElementById('batchFileInput').addEventListener('change', (e) => {
+        batchFiles = Array.from(e.target.files);
+        const list = document.getElementById('batchFileList');
+        list.innerHTML = batchFiles.map((f, i) => `<div><i class="fas fa-file-alt mr-2"></i>${i + 1}. ${f.name}</div>`).join('');
+    });
+
+    // Chunks sized for a few minutes of speech each — Google's guidance is that
+    // TTS quality/consistency drifts past a few minutes of continuous audio,
+    // and every chunk boundary is a new independent API call that can pick a
+    // slightly different voice interpretation. Fewer, longer chunks means fewer
+    // of those voice-switch points for a given piece of text.
+    function splitTextIntoChunks(text, maxLength = 3000) {
         const chunks = [];
         const parts = text.split(/(?<=[.!?\n])\s+/);
         let current = '';
@@ -146,83 +201,106 @@
                 delay *= 2;
             }
         }
-        throw new Error("API limit elérve: minden próbálkozás meghiúsult. Várj egy percet.");
+        throw new Error("API limit elérve: minden próbálkozás meghiúsult. Ez a fiókod percenkénti/napi kvótája (RPM/TPM/RPD), nem a fizetett egyenleged — ellenőrizd a Google Cloud Console kvóta beállításait.");
+    }
+
+    // Generates audio for one piece of text, chunked internally. Reused by
+    // both single-text mode and batch mode.
+    async function generateAudioForText(text, voice, apiKey, onProgress) {
+        const chunks = splitTextIntoChunks(text, 3000);
+        let combined = new Uint8Array(0);
+        let sampleRate = 24000;
+
+        for (let i = 0; i < chunks.length; i++) {
+            if (onProgress) onProgress(i, chunks.length);
+
+            const payload = {
+                contents: [{ parts: [{ text: `Narrate the following text. No breathing sounds. Consistent voice:\n\n${chunks[i]}` }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    // Fixed seed: not officially documented for TTS, but supported
+                    // elsewhere in the Gemini API for reproducible output. Using the
+                    // same seed for every chunk of a run is a cheap experiment that
+                    // may help keep the voice interpretation consistent across calls.
+                    seed: 42,
+                    speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
+                }
+            };
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+            const response = await fetchWithRetry(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            if (data.error) throw new Error(`API Hiba: ${data.error.message}`);
+
+            const candidate = data.candidates?.[0];
+            if (!candidate) throw new Error("A válasz nem tartalmazott 'candidates' tömböt.");
+            if (candidate.finishReason === "SAFETY") throw new Error("A generálást a biztonsági szűrő blokkolta.");
+
+            let inlineData = null;
+            for (const part of (candidate.content?.parts || [])) {
+                if (part.inlineData?.mimeType?.startsWith('audio')) { inlineData = part.inlineData; break; }
+            }
+            if (!inlineData?.data) {
+                const textFallback = (candidate.content?.parts || []).map(p => p.text).filter(Boolean).join(' ');
+                if (textFallback) throw new Error("Az API hang helyett szöveget adott vissza: " + textFallback.substring(0, 80));
+                throw new Error(`Nem érkezett hangadat. Ok: ${candidate.finishReason}`);
+            }
+
+            const rateMatch = inlineData.mimeType.match(/rate=(\d+)/);
+            if (rateMatch) sampleRate = parseInt(rateMatch[1]);
+
+            const pcm = new Uint8Array(base64ToArrayBuffer(inlineData.data));
+            const merged = new Uint8Array(combined.length + pcm.length);
+            merged.set(combined); merged.set(pcm, combined.length);
+            combined = merged;
+        }
+        return { pcm: combined, sampleRate };
     }
 
     async function processTextToSpeech() {
         const apiKey = document.getElementById('apiKeyInput').value.trim();
-        const text   = document.getElementById('textInput').value.trim();
         const voice  = document.getElementById('voiceSelect').value;
 
         if (!apiKey) { showError("Kérlek, add meg a Gemini API kulcsodat!"); return; }
-        if (!text)   { showError("Kérlek, illessz be szöveget!"); return; }
+
+        if (inputMode === 'text') {
+            await runTextMode(apiKey, voice);
+        } else {
+            await runBatchMode(apiKey, voice);
+        }
+    }
+
+    async function runTextMode(apiKey, voice) {
+        const text = document.getElementById('textInput').value.trim();
+        if (!text) { showError("Kérlek, illessz be szöveget!"); return; }
 
         const btn = document.getElementById('generateBtn');
         btn.disabled = true; btn.classList.add('opacity-50');
         document.getElementById('loadingStatus').classList.remove('hidden');
         document.getElementById('resultArea').classList.add('hidden');
+        document.getElementById('batchResultArea').classList.add('hidden');
         document.getElementById('errorArea').classList.add('hidden');
 
         try {
-            const chunks = splitTextIntoChunks(text, 800);
-            let combined = new Uint8Array(0);
-            let sampleRate = 24000;
-
-            for (let i = 0; i < chunks.length; i++) {
-                document.getElementById('loadingText').textContent = chunks.length > 1
-                    ? `Hangszintézis (${i + 1}/${chunks.length})...`
+            const result = await generateAudioForText(text, voice, apiKey, (i, total) => {
+                document.getElementById('loadingText').textContent = total > 1
+                    ? `Hangszintézis (${i + 1}/${total})...`
                     : 'Hangszintézis folyamatban...';
+            });
 
-                const payload = {
-                    contents: [{ parts: [{ text: `Narrate the following text. No breathing sounds. Consistent voice:\n\n${chunks[i]}` }] }],
-                    generationConfig: {
-                        responseModalities: ["AUDIO"],
-                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } }
-                    }
-                };
+            if (result.pcm.length === 0) throw new Error("Nem sikerült hangot generálni.");
 
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
-                const response = await fetchWithRetry(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-                if (data.error) throw new Error(`API Hiba: ${data.error.message}`);
-
-                const candidate = data.candidates?.[0];
-                if (!candidate) throw new Error("A válasz nem tartalmazott 'candidates' tömböt.");
-                if (candidate.finishReason === "SAFETY") throw new Error("A generálást a biztonsági szűrő blokkolta.");
-
-                let inlineData = null;
-                for (const part of (candidate.content?.parts || [])) {
-                    if (part.inlineData?.mimeType?.startsWith('audio')) { inlineData = part.inlineData; break; }
-                }
-                if (!inlineData?.data) {
-                    const textFallback = (candidate.content?.parts || []).map(p => p.text).filter(Boolean).join(' ');
-                    if (textFallback) throw new Error("Az API hang helyett szöveget adott vissza: " + textFallback.substring(0, 80));
-                    throw new Error(`Nem érkezett hangadat. Ok: ${candidate.finishReason}`);
-                }
-
-                const rateMatch = inlineData.mimeType.match(/rate=(\d+)/);
-                if (rateMatch) sampleRate = parseInt(rateMatch[1]);
-
-                const pcm = new Uint8Array(base64ToArrayBuffer(inlineData.data));
-                const merged = new Uint8Array(combined.length + pcm.length);
-                merged.set(combined); merged.set(pcm, combined.length);
-                combined = merged;
-            }
-
-            if (combined.length === 0) throw new Error("Nem sikerült hangot generálni.");
-
-            const wavBlob = createWavBlob(combined.buffer, sampleRate);
+            const wavBlob = createWavBlob(result.pcm.buffer, result.sampleRate);
             const audioUrl = URL.createObjectURL(wavBlob);
 
             const player = document.getElementById('audioPlayer');
             player.src = audioUrl;
             player.playbackRate = 1.0;
-            player.onloadedmetadata = () => { player.playbackRate = 1.0; };
 
             const dl = document.getElementById('downloadBtn');
             dl.href = audioUrl;
@@ -237,6 +315,77 @@
             btn.disabled = false; btn.classList.remove('opacity-50');
             document.getElementById('loadingStatus').classList.add('hidden');
         }
+    }
+
+    async function runBatchMode(apiKey, voice) {
+        if (batchFiles.length === 0) { showError("Kérlek, válassz ki legalább egy .txt fájlt!"); return; }
+
+        const btn = document.getElementById('generateBtn');
+        btn.disabled = true; btn.classList.add('opacity-50');
+        document.getElementById('loadingStatus').classList.remove('hidden');
+        document.getElementById('resultArea').classList.add('hidden');
+        document.getElementById('batchResultArea').classList.add('hidden');
+        document.getElementById('errorArea').classList.add('hidden');
+
+        batchResults = [];
+        const resultList = document.getElementById('batchResultList');
+        resultList.innerHTML = '';
+
+        try {
+            for (let f = 0; f < batchFiles.length; f++) {
+                const file = batchFiles[f];
+                const text = (await file.text()).trim();
+                if (!text) continue;
+
+                const result = await generateAudioForText(text, voice, apiKey, (i, total) => {
+                    document.getElementById('loadingText').textContent =
+                        `Fájl ${f + 1}/${batchFiles.length} (${file.name})` +
+                        (total > 1 ? ` – szakasz ${i + 1}/${total}...` : '...');
+                });
+
+                if (result.pcm.length === 0) throw new Error(`Nem sikerült hangot generálni a(z) "${file.name}" fájlból.`);
+
+                const wavBlob = createWavBlob(result.pcm.buffer, result.sampleRate);
+                const wavName = file.name.replace(/\.txt$/i, '') + '.wav';
+                batchResults.push({ name: wavName, blob: wavBlob });
+
+                const audioUrl = URL.createObjectURL(wavBlob);
+                const row = document.createElement('div');
+                row.className = 'bg-slate-800 border border-slate-700 rounded-lg p-3';
+                row.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-slate-300 font-medium truncate"><i class="fas fa-file-audio mr-2"></i>${wavName}</span>
+                        <a href="${audioUrl}" download="${wavName}" class="text-xs bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 py-1 px-2 rounded">
+                            <i class="fas fa-download mr-1"></i>Letöltés
+                        </a>
+                    </div>
+                    <audio controls src="${audioUrl}" class="w-full outline-none"></audio>`;
+                resultList.appendChild(row);
+            }
+
+            document.getElementById('batchResultArea').classList.remove('hidden');
+
+        } catch (err) {
+            console.error(err);
+            showError(err.message);
+        } finally {
+            btn.disabled = false; btn.classList.remove('opacity-50');
+            document.getElementById('loadingStatus').classList.add('hidden');
+        }
+    }
+
+    async function downloadAllAsZip() {
+        if (batchResults.length === 0) return;
+        const zip = new JSZip();
+        for (const r of batchResults) zip.file(r.name, r.blob);
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'hangoskonyvek.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 
     function showError(msg) {
