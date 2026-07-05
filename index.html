@@ -331,19 +331,27 @@
         const resultList = document.getElementById('batchResultList');
         resultList.innerHTML = '';
 
-        try {
-            for (let f = 0; f < batchFiles.length; f++) {
-                const file = batchFiles[f];
-                const text = (await file.text()).trim();
-                if (!text) continue;
+        let stoppedEarly = null; // { file, error }
 
+        for (let f = 0; f < batchFiles.length; f++) {
+            const file = batchFiles[f];
+            let text;
+            try {
+                text = (await file.text()).trim();
+            } catch (e) {
+                stoppedEarly = { file, error: e };
+                break;
+            }
+            if (!text) continue;
+
+            try {
                 const result = await generateAudioForText(text, voice, apiKey, (i, total) => {
                     document.getElementById('loadingText').textContent =
                         `Fájl ${f + 1}/${batchFiles.length} (${file.name})` +
                         (total > 1 ? ` – szakasz ${i + 1}/${total}...` : '...');
                 });
 
-                if (result.pcm.length === 0) throw new Error(`Nem sikerült hangot generálni a(z) "${file.name}" fájlból.`);
+                if (result.pcm.length === 0) throw new Error("Nem sikerült hangot generálni.");
 
                 const wavBlob = createWavBlob(result.pcm.buffer, result.sampleRate);
                 const wavName = file.name.replace(/\.txt$/i, '') + '.wav';
@@ -361,17 +369,29 @@
                     </div>
                     <audio controls src="${audioUrl}" class="w-full outline-none"></audio>`;
                 resultList.appendChild(row);
+
+            } catch (err) {
+                console.error(err);
+                stoppedEarly = { file, error: err };
+                break; // quota/API errors won't resolve mid-batch — stop instead of burning retries on every remaining file
             }
-
-            document.getElementById('batchResultArea').classList.remove('hidden');
-
-        } catch (err) {
-            console.error(err);
-            showError(err.message);
-        } finally {
-            btn.disabled = false; btn.classList.remove('opacity-50');
-            document.getElementById('loadingStatus').classList.add('hidden');
         }
+
+        if (batchResults.length > 0) {
+            document.getElementById('batchResultArea').classList.remove('hidden');
+        }
+
+        if (stoppedEarly) {
+            const failedIndex = batchFiles.indexOf(stoppedEarly.file);
+            const remaining = batchFiles.slice(failedIndex).map(f => f.name);
+            showError(
+                `${batchResults.length}/${batchFiles.length} fájl elkészült. A(z) "${stoppedEarly.file.name}" fájlnál leállt a feldolgozás: ${stoppedEarly.error.message} ` +
+                `Feldolgozatlan fájlok: ${remaining.join(', ')}. Ezeket később, kvóta-felszabadulás után külön futtasd újra.`
+            );
+        }
+
+        btn.disabled = false; btn.classList.remove('opacity-50');
+        document.getElementById('loadingStatus').classList.add('hidden');
     }
 
     async function downloadAllAsZip() {
