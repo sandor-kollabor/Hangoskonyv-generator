@@ -1,0 +1,33 @@
+# ---- TITKOK: az elso kulcs keletkezese ELOTT (SZOFT-CORE §4) ----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+config.local.*
+
+# ---- generalt hang: soha ne kerulj a repoba (GB-os fajlok) ----
+out/
+cache/
+*.wav
+*.mp3
+*.opus
+*.m4a
+*.m4b
+!bench/minta/*.wav
+
+# ---- futtatokornyezet ----
+node_modules/
+__pycache__/
+.venv/
+venv/
+dist/
+build/
+*.log
+
+# ---- OS / szerkeszto ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
