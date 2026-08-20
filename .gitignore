@@ -9,6 +9,8 @@ config.local.*
 
 # ---- generalt hang: soha ne kerulj a repoba (GB-os fajlok) ----
 out/
+!bench/out/
+!bench/out/MERES.md
 cache/
 *.wav
 *.mp3
@@ -31,3 +33,7 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# ---- letoltott TTS-modellek: artefaktum, nem forras (63 MB/hang) ----
+voices/
+.venv-piper/

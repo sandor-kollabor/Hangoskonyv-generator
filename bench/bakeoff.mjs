@@ -47,9 +47,9 @@ async function loadAdapters() {
  * Ha ez elbukik, az adapter minden tovabbi negativ lelete ERVENYTELEN -
  * nem a magyar kiejtest mertuk, hanem a sajat elrontott hivasunkat (J73).
  */
-async function positiveControl(adapter, text) {
+async function positiveControl(mod, text) {
   try {
-    const r = await adapter.mod.synthesize({ text });
+    const r = await mod.synthesize({ text });
     const sec = pcmDurationSec(r.audio.length, r.sampleRate);
     const expected = text.length / CHARS_PER_SEC;
     // Nagysagrend-ellenorzes, nem egyezes: 0,3x - 3x a vart hossz.

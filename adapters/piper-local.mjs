@@ -13,7 +13,7 @@
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile, unlink, mkdtemp } from 'node:fs/promises';
+import { readFile, writeFile, unlink, mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { stripWavHeader } from '../core/wav.mjs';
@@ -48,14 +48,35 @@ export async function synthesize({ text, voice }) {
 
   const v = voice || capabilities().defaultVoice;
   const model = join(voiceDir, `${v}.onnx`);
+
+  // A mintavetelt a MODELL konfigjabol olvassuk, nem konstansbol: a 'medium'
+  // 22050, a 'low' 16000 - egy rossz konstans nemán elrontja a hossz-szamitast
+  // (es ezzel a csonka-kimenet-detektort is).
+  let sampleRate = SAMPLE_RATE;
+  try {
+    const cfg = JSON.parse(await readFile(`${model}.json`, 'utf8'));
+    if (cfg.audio?.sample_rate) sampleRate = cfg.audio.sample_rate;
+  } catch {
+    throw new Error(`Piper: a modell configja nem olvashato: ${model}.json`);
+  }
+
   const dir = await mkdtemp(join(tmpdir(), 'piper-'));
   const outPath = join(dir, 'out.wav');
 
+  // A bemenet FAJLBAN megy (-i), nem stdin-en. Ket ok:
+  //  1. a child_process.execFile NEM tamogat 'input' opciot (az execFileSync-e) -
+  //     a szoveg csendben elveszik, es a piper EOF-ra var, orokre;
+  //  2. Windowson a stdin kodolasa a konzol-kodlapon dol el (cp1252), ami az
+  //     ekezeteket elrontja. A fajl explicit UTF-8, es PYTHONUTF8=1 kenyszeriti,
+  //     hogy a Python is annak olvassa (a 3.12 default meg locale-fuggo).
+  const inPath = join(dir, 'in.txt');
+  await writeFile(inPath, text, 'utf8');
+
   try {
-    // A Piper stdin-rol olvas; a -f a kimeneti WAV.
-    await execFileAsync(bin, ['-m', model, '-f', outPath], {
-      input: text,
+    await execFileAsync(bin, ['-m', model, '-i', inPath, '-f', outPath], {
       maxBuffer: 64 * 1024 * 1024,
+      env: { ...process.env, PYTHONUTF8: '1' },
+      timeout: 300000,
     });
   } catch (err) {
     throw new Error(`Piper futasi hiba: ${(err.stderr || err.message || '').toString().slice(0, 300)}`);
@@ -69,8 +90,8 @@ export async function synthesize({ text, voice }) {
   return {
     audio: pcm,
     format: 'pcm16',
-    sampleRate: SAMPLE_RATE,
+    sampleRate,
     chars: text.length,
-    providerMeta: { voice: v, model },
+    providerMeta: { voice: v, model, sampleRate },
   };
 }
