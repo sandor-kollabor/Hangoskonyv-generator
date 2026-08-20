@@ -4,6 +4,49 @@ Legújabb elöl. Formátum: tünet → gyökérok → megoldás → miért.
 
 ---
 
+## 2026-08-20 (későbbi) — Eszköz-leltár és az Azure ingyenes szint
+
+### Lelet 4: az F0 ahogy megterveztem, NEM futtatható — eszköz-leltár
+
+Mért állapot a PC1-en (verzió-lekérdezéssel, nem fájl-létezéssel):
+
+| Eszköz | Állapot | Következmény |
+|---|---|---|
+| Node | v24.18.0 ✅ | a CLI-mag futtatható |
+| **ffmpeg** | **nincs** | az `assembler.js` (M4B, fejezetjelek) ezen áll → **F1 előfeltétele** |
+| **piper** | **nincs** | a draft-szint telepítés nélkül nem mérhető |
+| python | nincs PATH-on | de van `kollabor-cockpit\.venv` → a Piper pip-ből telepíthető |
+| **gcloud / ADC** | **nincs** | **a Google Cloud TTS most nem elérhető** |
+| Kulcsok | csak `GEMINI_API_KEY` (`kollabor-cockpit-security/.env`) | Google Cloud / Azure / ElevenLabs: nincs |
+
+**Gyökérok:** a `TERV.md` F0 fázisát „fél nap"-ra tettem, de a Chirp3-HD **GCP-projektet,
+számlázást és service accountot** igényel — fiók-létrehozást és hitelesítést az AI nem
+végezhet a szerző helyett. A terv ezen a ponton a szerző idejét feltételezte, anélkül hogy
+kimondta volna.
+
+**Megoldás:** az F0 kettébontva. Ami fiók nélkül, ma futtatható: **Gemini** (van kulcs,
+nem determinisztikus) + **Piper** (ingyenes, helyi, determinisztikus). A felhős
+determinisztikus szint fiók-beállítás után csatlakozik.
+
+### Lelet 5: az Azure F0 szint eltünteti a költséget — egy csapdával
+
+**Lelet:** az Azure AI Speech **Free F0** szintje **0,5 M karakter/hónap** neurális TTS-t ad,
+és nem jár le, amíg a fiók aktív. Magyar hangok: `hu-HU-NoemiNeural`, `hu-HU-TamasNeural`.
+A ~1,22 M karakteres korpusz **három hónap ingyenes kvótából kifér**; fizetve (S0: $16/1M)
+is csak ~$20.
+
+**A csapda:** az ingyenes kvóta mechanikája dokumentált számla-meglepetés-forrás (több
+Microsoft Q&A-kérdés arról, hogy a 0,5 M-os kvóta ellenére minden karaktert kiszámláztak).
+
+**Fék:** **explicit `F0` árszint**, nem `S0` + bizalom az „ingyenes 500K"-ban. Az F0 a kvóta
+elérésekor **hibát ad, nem számlát** — fail-closed, pénzre alkalmazva (SZOFT-CORE §4).
+
+**Nyitott:** az Azure magyar minőségét sem hallgatta meg senki. Egy dokumentált hibajelentés
+van izolált magyar szavak félreolvasásáról a `NoemiNeural`-nál — ez épp az, amit az F0-nak
+mérnie kell, nem elhinni.
+
+---
+
 ## 2026-08-20 — Repó-higiénia + a CosyVoice2-terv cáfolata (F0 előtt)
 
 ### Lelet 1: a repó már létezett (stale-state, km10)
