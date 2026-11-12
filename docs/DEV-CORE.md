@@ -1,6 +1,7 @@
 ---
-core: p1
-kiterjeszti: SZOFT-CORE c4
+core: p2
+kiterjeszti: SZOFT-CORE c6
+osszevetve: 2026-11-12
 ---
 
 # DEV-CORE — Hangoskönyv-generátor (projekt-réteg)
@@ -8,6 +9,11 @@ kiterjeszti: SZOFT-CORE c4
 > Ez a fájl a generikus [`SZOFT-CORE`](../../ai-fejlesztes-modszertan/szoftverfejlesztes/SZOFT-CORE.md)
 > **kiterjesztése**, nem ismétlése. Ami ott áll, itt is áll. Csak a projekt sajátosságai
 > kerülnek ide.
+>
+> **Verzió:** `p2`, a `SZOFT-CORE c6` fölött — **összevetve: 2026-11-12.** A `p1` a c4-hez
+> készült; a c5 (`J138`), a c6 (`J139`) és a `J73` itt utólag került összevetésre (lent, „A
+> c5–c6 összevetése”). A felirat azt jelenti, hogy a réteg a megnevezett verzióval **ténylegesen
+> össze lett vetve**, nem azt, hogy a legújabbat töltöd be.
 
 ## A projekt specifikus kockázatai
 
@@ -47,6 +53,21 @@ jelöli. **Ne általánosíts** nem-determinisztikus adapteren mért viselkedés
   proxy- és szerver-naplókba kerül. *A prototípus ezt megsérti; az érett verzió nem.*
 - A `.gitignore` a titkokra és a generált hangra (GB-os fájlok) az első kulcs keletkezése
   **előtt** felvéve — kész.
+
+## A c5–c6 összevetése (2026-11-12)
+
+- **`J73` (SZOFT-CORE §2):** a fenti harmadik verifikációs fék már erre hivatkozik — egyezik,
+  nincs teendő.
+- **`J138` (SZOFT-CORE §4, telepített állapot): ma nem alkalmazható** — a projekt helyi CLI,
+  kiszolgált könyvtára és szervere nincs (kódból és fájllistából olvasva, 2026-11-12; a
+  `.venv-piper`-ben lévő Piper-HTTP-szervert nem használjuk). **Akkor válik kötelezővé,** ha a
+  generált hang vagy bármely kimenet webszerverre kerül: onnantól a kiszolgált könyvtár külön
+  mérési tárgy, és a `.env` meg a mentések nem kerülhetnek oda.
+- **`J139` (SZOFT-CORE §7, visszakeresés) — az első alkalmazás itt:** a „kulcs csak headerben”
+  szabályra keresve `?key=` — egy találat, az `archiv/index-v6plus.html` (a prototípus, a fenti
+  Titok-kezelés pont már kimondja); az élő adapter (`adapters/gemini-tts.mjs`) az
+  `x-goog-api-key` headert használja. Az `archiv/` történet, nem élő állapot, ezért a `J139`
+  határa szerint nem javítandó — de **ne indítsd onnan** valódi kulccsal.
 
 ## Napló
 
